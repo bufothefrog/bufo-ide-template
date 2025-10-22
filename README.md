@@ -15,94 +15,106 @@ This repository contains a Coder template that provisions AI-powered development
 - **Persistent home volumes** for workspace data
 - **Customizable resources** (CPU, memory)
 - **Auto-clone repositories** on workspace creation
-- **Automated CI/CD** for template validation and deployment
+- **Pre-commit hooks** for local validation before commits
 
 ## Repository Structure
 
 ```
 .
-├── main.tf              # Terraform template configuration
+├── main.tf                    # Terraform template configuration
 ├── build/
-│   └── Dockerfile       # Custom workspace image definition
+│   └── Dockerfile             # Custom workspace image definition
 ├── .github/
 │   └── workflows/
-│       ├── validate.yml # Pre-deployment validation
-│       └── deploy.yml   # Automated deployment to Coder
-└── README.md            # This file
+│       └── validate.yml       # Optional CI validation
+├── .pre-commit-config.yaml    # Pre-commit hooks configuration
+├── setup-hooks.sh             # One-time setup script
+└── README.md                  # This file
 ```
 
 ## Quick Start
 
 ### Prerequisites
 
-1. **Coder instance** with GitHub OAuth configured
-2. **GitHub repository secrets** (for automated deployment):
-   - `CODER_URL`: Your Coder instance URL (e.g., `https://coder.example.com`)
-   - `CODER_SESSION_TOKEN`: Your Coder API token ([generate here](https://coder.com/docs/cli/tokens))
+1. **Coder instance** with GitHub OAuth configured (e.g., `https://coder.bufothefrog.com`)
+2. **Coder CLI** installed locally ([install guide](https://coder.com/docs/install))
+3. **Python 3** with pip (for pre-commit hooks)
+4. **Docker** (for local validation)
+5. **Terraform** (for template validation)
 
-### Setting Up GitHub Secrets
+### Initial Setup
 
-1. Go to your repository **Settings** → **Secrets and variables** → **Actions**
-2. Click **New repository secret**
-3. Add both secrets:
-   - Name: `CODER_URL`, Value: `https://coder.bufothefrog.com`
-   - Name: `CODER_SESSION_TOKEN`, Value: `your-token-here` (see below)
+Run the setup script once to install pre-commit hooks:
+
+```bash
+./setup-hooks.sh
+```
+
+This will:
+- Install the `pre-commit` tool
+- Set up git hooks to validate changes before commit
+- Run validation checks automatically
 
 ### Development Workflow
 
-This repository is configured with **automated CI/CD** via GitHub Actions. Changes pushed to `main` are automatically validated and deployed.
+This repository uses **pre-commit hooks** for local validation before commits. Changes are validated locally, then deployed manually to your Coder instance.
 
-#### Option 1: Automated Deployment (Recommended)
+#### Standard Workflow
 
 1. **Make changes** to `main.tf` or `build/Dockerfile`
-2. **Commit and push** to `main` branch:
+
+2. **Commit changes** (hooks run automatically):
    ```bash
    git add main.tf build/Dockerfile
    git commit -m "Update template configuration"
-   git push
    ```
-3. **GitHub Actions automatically**:
-   - ✅ Validates Terraform syntax and configuration
-   - ✅ Checks Dockerfile build validity
-   - ✅ Runs template best practices checks
-   - ✅ Deploys to `https://coder.bufothefrog.com` if all tests pass
-   - ❌ Reports errors and blocks deployment if validation fails
 
-**No manual intervention required** - errors are caught before deployment!
+3. **Pre-commit hooks automatically**:
+   - ✅ Format Terraform files
+   - ✅ Validate Terraform configuration
+   - ✅ Lint Dockerfile with hadolint
+   - ✅ Test Docker build
+   - ✅ Check YAML syntax
+   - ✅ Validate shell scripts
+   - ✅ Check for trailing whitespace and line endings
+   - ❌ Block commit if any check fails
 
-#### Option 2: Manual Testing
+4. **Deploy to Coder** (manual):
+   ```bash
+   # If on VPN or local network
+   coder login https://coder.bufothefrog.com
+   coder templates push bufo-template --directory . --yes
+   ```
 
-Test locally before committing:
+5. **Push to GitHub**:
+   ```bash
+   git push origin main
+   ```
+
+**Errors are caught before commit** - no broken templates!
+
+#### Skipping Hooks (Not Recommended)
+
+If you need to commit without running hooks:
 
 ```bash
-# Validate Terraform syntax
-terraform fmt -check
-terraform init -backend=false
-terraform validate
-
-# Test Docker build
-cd build
-docker build -t bufo-template-test .
-cd ..
-
-# Push to Coder manually
-export CODER_URL="https://coder.bufothefrog.com"
-coder login $CODER_URL
-coder templates push bufo-template --directory . --yes
+git commit --no-verify -m "Emergency fix"
 ```
 
-#### Generating a Coder API Token
+#### Running Hooks Manually
 
-To get your `CODER_SESSION_TOKEN`:
+Test all validations without committing:
 
 ```bash
-# Login to your Coder instance
-coder login https://coder.bufothefrog.com
+pre-commit run --all-files
+```
 
-# Create a long-lived token (30 days)
-coder tokens create --lifetime 720h
+#### Updating Hooks
 
-# Copy the token and add it to GitHub Secrets
+Keep pre-commit hooks up to date:
+
+```bash
+pre-commit autoupdate
 ```
 
 ## Customization
@@ -172,56 +184,55 @@ cat > ~/.config/Code/User/globalStorage/anthropic.claude-code/mcp_config.json <<
 MCP_EOF
 ```
 
-## GitHub Actions Workflows
+## Optional: GitHub Actions CI
 
-### Validation (`validate.yml`)
+The repository includes an optional GitHub Actions workflow (`.github/workflows/validate.yml`) that runs the same checks as pre-commit hooks in CI:
 
-Runs on every push and PR to `main`:
 - Terraform format check
 - Terraform validation
-- Dockerfile syntax check
+- Dockerfile build test
 - Template best practices verification
 
-**Prevents broken templates from being deployed.**
-
-### Deployment (`deploy.yml`)
-
-Runs on push to `main` when template files change:
-- Installs Coder CLI
-- Authenticates with your Coder instance
-- Pushes template using `coder templates push`
-- Reports deployment status
-
-Can also be triggered manually via **Actions** → **Deploy to Coder** → **Run workflow**
+This is useful if you want validation to run on GitHub as well, but **it's not required** since pre-commit hooks catch errors locally.
 
 ## Troubleshooting
 
-### Deployment fails with authentication error
+### Pre-commit hook fails on Docker build
 
-**Fix**: Verify your `CODER_SESSION_TOKEN` secret is valid:
+**Fix**: Ensure Docker is running and accessible:
 ```bash
-coder login https://your-coder-instance.com
-coder tokens create --lifetime 720h
+docker ps
+# If error, start Docker daemon
 ```
 
-Copy the new token to your GitHub secret.
-
-### Validation fails on Dockerfile
-
-**Fix**: Test Docker build locally:
+Test build manually:
 ```bash
 cd build
-docker build -t test .
+docker build -t bufo-template-test .
 ```
 
-Fix any errors, commit, and push.
+### Pre-commit hook fails on Terraform
 
-### Template doesn't show in Coder
+**Fix**: Ensure Terraform is installed:
+```bash
+terraform version
+# If not found, install from: https://developer.hashicorp.com/terraform/downloads
+```
 
-**Fix**: Check GitHub Actions logs for deployment errors. Ensure:
-1. Secrets are configured correctly
-2. Your Coder user has template creation permissions
-3. The template name doesn't conflict with existing templates
+### Template push fails
+
+**Fix**: Ensure you're connected to your Coder instance:
+```bash
+# Check connection
+coder login https://coder.bufothefrog.com
+
+# Verify you can reach it (VPN/local network required)
+ping coder.bufothefrog.com
+```
+
+### Pre-commit is slow
+
+**Fix**: Hooks cache dependencies after first run. If still slow, you can disable specific hooks in `.pre-commit-config.yaml`
 
 ### Workspace fails to start
 
@@ -230,24 +241,28 @@ Fix any errors, commit, and push.
 - Insufficient Docker resources
 - Build context files missing
 
-## Local Development
+## Quick Iteration
 
-To iterate quickly without pushing to GitHub:
+To iterate quickly on template changes:
 
 ```bash
 # Make changes to main.tf or Dockerfile
 vim main.tf
 
-# Validate
-terraform fmt
-terraform validate
+# Test locally (pre-commit runs same checks)
+pre-commit run --all-files
 
 # Push directly to Coder
-export CODER_URL="https://your-coder-instance.com"
+coder login https://coder.bufothefrog.com
 coder templates push bufo-template --directory . --yes
 
 # Create test workspace
 coder create test-workspace --template bufo-template
+
+# When ready, commit and push to GitHub
+git add .
+git commit -m "Update template"
+git push
 ```
 
 ## Template Variables

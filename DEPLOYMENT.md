@@ -53,26 +53,36 @@ Pre-configured in workspace startup script:
    - Uses GitHub OAuth token from Coder
    - Full GitHub API access
 
-## Automated Deployment
+## Deployment Workflow
 
-When you push to `main` branch:
-1. GitHub Actions validates Terraform and Dockerfile
-2. If validation passes, deploys to `https://coder.bufothefrog.com`
-3. Updates the `bufo-template` template
-4. Existing workspaces continue running (update on rebuild)
+### Local Validation (Pre-commit Hooks)
 
-**Required GitHub Secrets**:
-- `CODER_URL`: `https://coder.bufothefrog.com`
-- `CODER_SESSION_TOKEN`: Long-lived API token
+Before committing, pre-commit hooks automatically validate:
+1. Terraform formatting and configuration
+2. Dockerfile linting and build test
+3. YAML syntax (GitHub Actions)
+4. Shell script validation
+5. File hygiene (trailing whitespace, line endings)
 
-## Manual Deployment
+**Setup**: Run `./setup-hooks.sh` once after cloning.
+
+### Manual Deployment
+
+Since the Coder instance is **private** (VPN/local network only), deployment is manual:
 
 ```bash
+# Ensure you're on VPN or local network
+coder login https://coder.bufothefrog.com
+
 # From template directory
-export CODER_URL="https://coder.bufothefrog.com"
-coder login $CODER_URL
 coder templates push bufo-template --directory . --yes
 ```
+
+**Note**: GitHub Actions cannot reach the private Coder instance. Pre-commit hooks provide the same validation locally before commit.
+
+### Optional CI Validation
+
+An optional GitHub Actions workflow (`.github/workflows/validate.yml`) runs validation on push/PR, providing a second layer of checking. This is useful for team workflows but not required.
 
 ## Workspace Creation
 

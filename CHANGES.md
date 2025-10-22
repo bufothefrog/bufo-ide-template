@@ -29,22 +29,28 @@ All extensions are pulled from **Open VSX Registry** (not Microsoft Marketplace)
   - `Anthropic.claude-code`
   - `alex-c.code-canvas-app`
 
-## Automated CI/CD
+## Pre-commit Hooks
 
-### Validation Workflow (`.github/workflows/validate.yml`)
-Runs on every push and pull request:
-- Terraform format check (`terraform fmt -check`)
-- Terraform validation (`terraform validate`)
-- Dockerfile build test
-- Best practices verification
+### Configuration (`.pre-commit-config.yaml`)
+Local validation hooks that run before each commit:
+- **Terraform**: Format check, validation, docs generation
+- **Dockerfile**: Linting with hadolint, build test
+- **Shell scripts**: Validation with shellcheck
+- **General**: YAML syntax, trailing whitespace, line endings
+- **Coder-specific**: Provider check, template requirements
 
-### Deployment Workflow (`.github/workflows/deploy.yml`)
-Automatically deploys to `https://coder.bufothefrog.com` on push to `main`:
-- Installs Coder CLI
-- Authenticates with Coder instance
-- Pushes template using `coder templates push`
-- Reports deployment status
-- Can also be triggered manually via GitHub Actions UI
+### Setup Script (`setup-hooks.sh`)
+One-time setup that:
+- Installs pre-commit framework (via pip)
+- Configures git hooks
+- Tests validation on existing files
+- Provides usage instructions
+
+### Optional CI (`.github/workflows/validate.yml`)
+Optional GitHub Actions workflow for team validation:
+- Runs same checks as pre-commit hooks
+- Useful for PR reviews
+- Not required since validation happens locally
 
 ## Documentation
 
@@ -62,33 +68,46 @@ Technical documentation including:
 - Deployment process details
 - Troubleshooting guide
 
-## Required GitHub Secrets
+## Deployment Model
 
-To enable automated deployment, add these secrets to your GitHub repository:
+This template uses **local validation + manual deployment**:
 
-```
-CODER_URL = https://coder.bufothefrog.com
-CODER_SESSION_TOKEN = <your-token>
-```
+1. **Pre-commit hooks** validate changes before commit
+2. **Manual deployment** to Coder instance (VPN/local network required):
+   ```bash
+   coder login https://coder.bufothefrog.com
+   coder templates push bufo-template --directory . --yes
+   ```
+3. **Optional CI validation** via GitHub Actions (doesn't deploy)
 
-Generate token with:
-```bash
-coder login https://coder.bufothefrog.com
-coder tokens create --lifetime 720h
-```
+**Why manual deployment?** The Coder instance at `https://coder.bufothefrog.com` is private (VPN/local network only), so GitHub Actions cannot reach it for automated deployment.
 
 ## Next Steps
 
-1. Commit and push to GitHub:
+1. **Setup pre-commit hooks** (one-time):
+   ```bash
+   ./setup-hooks.sh
+   ```
+
+2. **Commit and push to GitHub**:
    ```bash
    git add .
-   git commit -m "Add tree, Claude CLI, VSCodium support, and CI/CD"
+   git commit -m "Add tree, Claude CLI, VSCodium support, and pre-commit hooks"
    git push origin main
    ```
 
-2. Add GitHub Secrets (see above)
+3. **Test the workflow** by making a small change:
+   ```bash
+   # Edit a file
+   vim main.tf
 
-3. Test the workflow by making a small change and pushing to `main`
+   # Commit (hooks run automatically)
+   git add main.tf
+   git commit -m "Test change"
+
+   # Deploy to Coder
+   coder templates push bufo-template --directory . --yes
+   ```
 
 ## Usage Examples
 
