@@ -35,7 +35,7 @@ database:
 
 ### Template Configuration
 
-**Name**: `bufo-template`
+**Name**: `bufo-ide-template`
 **Display Name**: Bufo IDE Template
 **Icon**: 🐸 (frog emoji)
 
@@ -251,10 +251,10 @@ git commit --no-verify -m "message"
 coder login https://coder.bufothefrog.com
 
 # 2. Push template
-coder templates push bufo-template --directory . --yes
+coder templates push bufo-ide-template --directory . --yes
 
 # 3. Verify deployment
-coder templates list | grep bufo-template
+coder templates list | grep bufo-ide-template
 ```
 
 **What Happens**:
@@ -285,7 +285,7 @@ coder templates list | grep bufo-template
 
 1. **User initiates**:
    ```bash
-   coder create my-workspace --template bufo-template
+   coder create my-workspace --template bufo-ide-template
    ```
 
 2. **Parameters prompted**:
@@ -341,7 +341,7 @@ coder start my-workspace  # Uses latest template
 
 **Option 2**: Manual update
 ```bash
-coder update my-workspace --template bufo-template
+coder update my-workspace --template bufo-ide-template
 ```
 
 ## Advanced Customization
@@ -490,7 +490,7 @@ docker run --rm -i hadolint/hadolint < build/Dockerfile
 #### Image size too large
 ```bash
 # Check layer sizes
-docker history bufo-template-test
+docker history bufo-ide-template-test
 
 # Optimization tips:
 # - Use multi-stage builds

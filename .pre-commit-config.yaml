@@ -83,7 +83,7 @@ repos:
 
       - id: check-docker-build
         name: Test Docker build
-        entry: bash -c 'cd build && docker build -t bufo-template-test . > /dev/null 2>&1 || (echo "Error Docker build failed" && exit 1)'
+        entry: bash -c 'cd build && docker build -t bufo-ide-template-test . > /dev/null 2>&1 || (echo "Error Docker build failed" && exit 1)'
         language: system
         files: build/Dockerfile
         pass_filenames: false

@@ -10,7 +10,7 @@ provider "docker" {}
 
 # --- Template Metadata ---
 locals {
-  template_name         = "bufo-template"
+  template_name         = "bufo-ide-template"
   template_display_name = "Bufo IDE Template"
   template_description  = "AI-powered dev environment with Chrome/GitHub MCP, Code Canvas. Auto GitHub auth, repo clone at creation."
   template_icon         = "/emojis/1f438.png"

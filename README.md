@@ -45,10 +45,10 @@ git add .
 git commit -m "Update template"
 
 # 3. Deploy to Coder
-coder templates push bufo-template --directory . --yes
+coder templates push bufo-ide-template --directory . --yes
 
 # 4. Test
-coder create test-workspace --template bufo-template
+coder create test-workspace --template bufo-ide-template
 
 # 5. Push to GitHub
 git push origin main
@@ -76,7 +76,7 @@ pre-commit run --all-files
 pre-commit autoupdate
 
 # Deploy without committing
-coder templates push bufo-template --directory . --yes
+coder templates push bufo-ide-template --directory . --yes
 
 # Test Docker build
 cd build && docker build -t test .
