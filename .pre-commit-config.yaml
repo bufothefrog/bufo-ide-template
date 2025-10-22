@@ -27,14 +27,13 @@ repos:
         files: main\.tf$
 
   # Dockerfile validation
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.12.0
+  - repo: local
     hooks:
-      - id: hadolint-docker
+      - id: hadolint
         name: Lint Dockerfile
         description: Runs hadolint to lint Dockerfiles
         entry: hadolint
-        language: docker_image
+        language: system
         types: ["dockerfile"]
         args:
           - --ignore=DL3008  # Pin versions in apt-get (we use dnf)
@@ -77,20 +76,20 @@ repos:
     hooks:
       - id: coder-template-check
         name: Check Coder template requirements
-        entry: bash -c 'grep -q "coder/coder" main.tf || (echo "Error: Coder provider not found in main.tf" && exit 1)'
+        entry: bash -c 'grep -q coder/coder main.tf || (echo "Error Coder provider not found in main.tf" && exit 1)'
         language: system
         files: main\.tf$
         pass_filenames: false
 
       - id: check-docker-build
         name: Test Docker build
-        entry: bash -c 'cd build && docker build -t bufo-template-test . > /dev/null 2>&1 || (echo "Error: Docker build failed" && exit 1)'
+        entry: bash -c 'cd build && docker build -t bufo-template-test . > /dev/null 2>&1 || (echo "Error Docker build failed" && exit 1)'
         language: system
         files: build/Dockerfile
         pass_filenames: false
 
       - id: check-todo-markers
         name: Check for TODO/FIXME markers
-        entry: bash -c 'if grep -rn "TODO\|FIXME\|XXX" main.tf build/Dockerfile 2>/dev/null; then echo "Warning: Found TODO/FIXME markers (not blocking)"; fi; exit 0'
+        entry: bash -c 'if grep -rn TODO\|FIXME\|XXX main.tf build/Dockerfile 2>/dev/null; then echo "Warning Found TODO/FIXME markers (not blocking)"; fi; exit 0'
         language: system
         pass_filenames: false

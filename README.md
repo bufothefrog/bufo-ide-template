@@ -7,6 +7,7 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 - **Rocky Linux 10** with modern tooling (`git`, `vim`, `jq`, `tree`, `gcc`, `make`)
 - **code-server** (VS Code in browser) with VSCodium compatibility
 - **Claude Code CLI** (`claude` command) for terminal AI assistance
+- **Global permissions** pre-configured for seamless Claude Code operation
 - **Pre-configured MCP servers**: Chrome DevTools & GitHub
 - **Code Canvas** for visual code exploration
 - **Automatic GitHub authentication** via Coder OAuth

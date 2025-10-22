@@ -85,6 +85,39 @@ This ensures Claude Code works whether users access via:
 - Local VSCodium installation
 - VS Code desktop
 
+### Global Permissions Configuration
+
+Claude Code permissions are automatically configured globally at `~/.claude/settings.json` with full access to all tools:
+
+**Allowed Tools**:
+- `Bash` - All shell commands
+- `Read`, `Edit`, `Write` - File operations
+- `Grep`, `Glob` - Search and pattern matching
+- `WebSearch`, `WebFetch` - Web access
+- `Task` - Agent spawning
+- `NotebookEdit` - Jupyter notebooks
+- `SlashCommand`, `Skill` - Custom commands and skills
+- `KillShell`, `BashOutput` - Background process management
+- `TodoWrite`, `ExitPlanMode` - Planning tools
+
+**Configuration** (`main.tf:204-233`):
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash", "Read", "Edit", "Write", "Grep", "Glob",
+      "WebSearch", "WebFetch", "Task", "NotebookEdit",
+      "SlashCommand", "KillShell", "BashOutput", "Skill",
+      "TodoWrite", "ExitPlanMode"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
+```
+
+This global configuration applies to both the Claude Code CLI and VSCode extension, eliminating permission prompts for standard operations.
+
 ## MCP Servers
 
 ### Chrome DevTools MCP
@@ -100,7 +133,7 @@ This ensures Claude Code works whether users access via:
 - Take screenshots
 - Extract data
 
-**Configuration** (`main.tf:187-190`):
+**Configuration** (`main.tf:188-191`):
 ```json
 {
   "command": "npx",
@@ -121,7 +154,7 @@ This ensures Claude Code works whether users access via:
 - Analyze security findings
 - Access discussions and notifications
 
-**Configuration** (`main.tf:191-197`):
+**Configuration** (`main.tf:193-199`):
 ```json
 {
   "command": "npx",
@@ -134,7 +167,7 @@ This ensures Claude Code works whether users access via:
 
 ### Adding Custom MCP Servers
 
-Edit the startup script in `main.tf` (lines 179-202):
+Edit the startup script in `main.tf` (lines 181-234):
 
 ```bash
 cat > ~/.config/Code/User/globalStorage/anthropic.claude-code/mcp_config.json << 'MCP_EOF'

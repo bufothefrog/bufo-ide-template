@@ -5,7 +5,7 @@ terraform {
   }
 }
 
-provider "coder"  {}
+provider "coder" {}
 provider "docker" {}
 
 # --- Template Metadata ---
@@ -17,15 +17,15 @@ locals {
 }
 
 # --- Workspace context ---
-data "coder_workspace"       "me" {}
+data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
-data "coder_provisioner"     "me" {}
+data "coder_provisioner" "me" {}
 
 # --- External Authentication ---
 # This tells Coder that GitHub auth is available for this template
 data "coder_external_auth" "github" {
   id       = "github"
-  optional = true  # Changed to optional to fix UI parsing
+  optional = true # Changed to optional to fix UI parsing
 }
 
 locals {
@@ -77,33 +77,33 @@ variable "memory_mb" {
 # --- Persistent home volume per workspace ---
 resource "docker_volume" "home" {
   name = "coder-${data.coder_workspace.me.id}-home"
-  
+
   labels {
     label = "coder.workspace.id"
     value = data.coder_workspace.me.id
   }
-  
+
   labels {
     label = "coder.workspace.name"
     value = data.coder_workspace.me.name
   }
-  
-  lifecycle { 
-    ignore_changes = all 
+
+  lifecycle {
+    ignore_changes = all
   }
 }
 
 # --- Custom workspace image ---
 resource "docker_image" "workspace" {
   name = "coder-${data.coder_workspace.me.id}"
-  
+
   build {
     context = "./build"
-    build_args = { 
-      USER = "coder" 
+    build_args = {
+      USER = "coder"
     }
   }
-  
+
   # Rebuild if build context changes
   triggers = {
     dir_sha1 = sha1(join("", [for f in fileset(path.module, "build/*") : filesha1(f)]))
@@ -136,14 +136,14 @@ resource "docker_container" "workspace" {
   ]
 
   # Allow container to reach host services if needed
-  host { 
-    host = "host.docker.internal" 
-    ip   = "host-gateway" 
+  host {
+    host = "host.docker.internal"
+    ip   = "host-gateway"
   }
 
   # Run the Coder agent init script
   entrypoint = ["sh", "-c", coder_agent.main.init_script]
-  
+
   # Keep container running
   command = ["sleep", "infinity"]
 }
@@ -160,22 +160,22 @@ resource "coder_agent" "main" {
     GIT_COMMITTER_NAME  = local.username
     GIT_COMMITTER_EMAIL = data.coder_workspace_owner.me.email
     # Pass GitHub token to workspace for automatic authentication
-    GITHUB_TOKEN        = data.coder_external_auth.github.access_token
+    GITHUB_TOKEN = data.coder_external_auth.github.access_token
   }
 
   # Startup script - configures git credentials and creates welcome guide
   startup_script = <<-EOT
     set -e
-    
+
     # Configure git with GitHub credentials using credential helper
     git config --global user.name "${local.username}"
     git config --global user.email "${data.coder_workspace_owner.me.email}"
     git config --global init.defaultBranch main
-    
+
     # Configure Git to use Coder's GitHub token for authentication
     # This credential helper returns the OAuth token for any git operation
     git config --global credential.helper '!f() { echo "username=oauth2"; echo "password=$GITHUB_TOKEN"; }; f'
-    
+
     # Configure Claude Code MCP servers
     # Support both VS Code and VSCodium paths
     for config_dir in ~/.config/Code ~/.config/VSCodium ~/.config/Code\ -\ OSS; do
@@ -200,7 +200,38 @@ resource "coder_agent" "main" {
 MCP_EOF
       fi
     done
-    
+
+    # Configure global Claude Code permissions
+    mkdir -p ~/.claude
+    cat > ~/.claude/settings.json << 'CLAUDE_SETTINGS_EOF'
+{
+  "alwaysThinkingEnabled": false,
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "Grep",
+      "Glob",
+      "WebSearch",
+      "WebFetch",
+      "Task",
+      "NotebookEdit",
+      "SlashCommand",
+      "KillShell",
+      "BashOutput",
+      "Skill",
+      "TodoWrite",
+      "ExitPlanMode"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "env": {}
+}
+CLAUDE_SETTINGS_EOF
+
     # Create welcome guide for first-time users
     REPO_MESSAGE=""
     if [ -n "${data.coder_parameter.repo_url.value}" ]; then
@@ -212,7 +243,7 @@ Git is configured with your GitHub credentials automatically."
 
 Clone any repo with: \`git clone https://github.com/user/repo\`"
     fi
-    
+
     cat > ~/WELCOME.md << EOF
 # 👋 Welcome to your Coder Workspace!
 
@@ -345,10 +376,10 @@ Your IDE theme automatically follows your system (light/dark mode).
 
 Happy coding! 🚀
 EOF
-    
+
     # Ensure project directory exists
     mkdir -p ~/project
-    
+
     echo "[coder] ✅ Workspace ready! GitHub authenticated, Chrome DevTools + GitHub MCP configured. Open WELCOME.md for next steps."
   EOT
 
@@ -403,27 +434,27 @@ module "code_server" {
 
 resource "coder_metadata" "workspace_info" {
   resource_id = coder_agent.main.id
-  
+
   item {
     key   = "CPU"
     value = "${var.cpu} cores"
   }
-  
+
   item {
     key   = "Memory"
     value = "${var.memory_mb} MB"
   }
-  
+
   item {
     key   = "Repository"
     value = data.coder_parameter.repo_url.value != "" ? data.coder_parameter.repo_url.value : "None (manual clone)"
   }
-  
+
   item {
     key   = "GitHub Auth"
     value = "Configured (check profile)"
   }
-  
+
   item {
     key   = "Home Volume"
     value = docker_volume.home.name
@@ -433,7 +464,7 @@ resource "coder_metadata" "workspace_info" {
 # Show GitHub authentication status
 resource "coder_metadata" "github_auth" {
   resource_id = data.coder_external_auth.github.id
-  
+
   item {
     key   = "Status"
     value = "GitHub OAuth configured"

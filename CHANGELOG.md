@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Global Claude Code permissions configuration (`~/.claude/settings.json`)
+  - Pre-configured with full tool access (Bash, Read, Edit, Write, etc.)
+  - Eliminates permission prompts for standard operations
+  - Applies to both CLI and VSCode extension
+
 ## [1.0.0] - 2025-10-22
 
 ### Added
