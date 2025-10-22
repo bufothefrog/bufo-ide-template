@@ -1,0 +1,55 @@
+name: Validate Template
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Coder Template
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.0"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        continue-on-error: false
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Check for required providers
+        run: |
+          if ! grep -q "coder/coder" main.tf; then
+            echo "Error: Coder provider not found"
+            exit 1
+          fi
+
+      - name: Validate Dockerfile
+        run: |
+          cd build
+          docker build --dry-run -t test . || docker build -t test --no-cache . > /dev/null
+
+      - name: Check template syntax
+        run: |
+          # Check for common mistakes
+          if grep -r "TODO\|FIXME\|XXX" main.tf build/Dockerfile; then
+            echo "Warning: Found TODO/FIXME markers"
+          fi
+
+          # Verify startup script doesn't have syntax errors
+          if ! grep -q "set -e" main.tf; then
+            echo "Warning: startup_script might not have error handling"
+          fi
