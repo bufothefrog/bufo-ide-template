@@ -107,8 +107,7 @@ resource "docker_image" "workspace" {
 
   # Rebuild if build context changes
   triggers = {
-    dir_sha1    = sha1(join("", [for f in fileset(path.module, "build/*") : filesha1(f)]))
-    build_timestamp = timestamp()  # Always trigger rebuild
+    dir_sha1 = sha1(join("", [for f in fileset(path.module, "build/*") : filesha1(f)]))
   }
 }
 
