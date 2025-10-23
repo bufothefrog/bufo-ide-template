@@ -98,7 +98,8 @@ resource "docker_image" "workspace" {
   name = "coder-${data.coder_workspace.me.id}"
 
   build {
-    context = "./build"
+    context    = "./build"
+    no_cache   = true  # Force rebuild to avoid stale layers
     build_args = {
       USER = "coder"
     }
@@ -106,7 +107,8 @@ resource "docker_image" "workspace" {
 
   # Rebuild if build context changes
   triggers = {
-    dir_sha1 = sha1(join("", [for f in fileset(path.module, "build/*") : filesha1(f)]))
+    dir_sha1    = sha1(join("", [for f in fileset(path.module, "build/*") : filesha1(f)]))
+    build_timestamp = timestamp()  # Always trigger rebuild
   }
 }
 
