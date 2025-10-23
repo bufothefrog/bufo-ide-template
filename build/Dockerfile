@@ -1,15 +1,16 @@
-# Rocky Linux 9 base - stable LTS release with better repository support
-FROM rockylinux/rockylinux:9
+# Ubuntu 22.04 LTS - stable and widely supported with excellent repository reliability
+FROM ubuntu:22.04
 
 # Set environment variables
-ENV LANG=en_US.UTF-8 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     CHROME_BIN=/usr/bin/google-chrome-stable
 
-# Install core system packages using DNF
-# Using Rocky 9 for stability and reliable repository access
-# Avoiding dnf update to prevent repository sync issues
-RUN dnf install -y \
+# Install core system packages using APT
+# Ubuntu has more reliable repository mirrors than Rocky Linux
+RUN apt-get update && \
+    apt-get install -y \
         sudo \
         curl \
         wget \
@@ -18,36 +19,29 @@ RUN dnf install -y \
         vim \
         gnupg2 \
         unzip \
-        xz \
+        xz-utils \
         zip \
         make \
         gcc \
-        gcc-c++ \
+        g++ \
         jq \
         tree \
-    && dnf clean all && \
-    rm -rf /var/cache/dnf/*
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome via DNF (auto-resolves dependencies)
-# Rocky 9 handles Google's GPG key more reliably
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub -o /tmp/linux_signing_key.pub && \
-    rpm --import /tmp/linux_signing_key.pub && \
-    echo "[google-chrome]" > /etc/yum.repos.d/google-chrome.repo && \
-    echo "name=Google Chrome" >> /etc/yum.repos.d/google-chrome.repo && \
-    echo "baseurl=https://dl.google.com/linux/chrome/rpm/stable/x86_64" >> /etc/yum.repos.d/google-chrome.repo && \
-    echo "enabled=1" >> /etc/yum.repos.d/google-chrome.repo && \
-    echo "gpgcheck=1" >> /etc/yum.repos.d/google-chrome.repo && \
-    echo "gpgkey=https://dl.google.com/linux/linux_signing_key.pub" >> /etc/yum.repos.d/google-chrome.repo && \
-    dnf install -y google-chrome-stable && \
-    rm -f /tmp/linux_signing_key.pub && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf/*
+# Install Google Chrome via APT
+RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20.x from NodeSource
-RUN curl -fsSL https://rpm.nodesource.com/setup_20.x | bash - && \
-    dnf install -y nodejs && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf/*
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Claude Code CLI globally
 # This provides the 'claude' command for terminal usage
@@ -65,7 +59,8 @@ RUN google-chrome-stable --version --no-sandbox 2>/dev/null || \
     claude --version
 
 # Create coder user with sudo privileges
-RUN useradd -m -s /bin/bash -G wheel coder && \
+RUN useradd -m -s /bin/bash coder && \
+    usermod -aG sudo coder && \
     echo "coder ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/coder && \
     chmod 0440 /etc/sudoers.d/coder
 

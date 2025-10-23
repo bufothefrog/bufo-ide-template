@@ -1,10 +1,10 @@
 # Bufo IDE Template for Coder
 
-AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and GitHub integration. Pre-configured with Rocky Linux 9, code-server, and automated validation.
+AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and GitHub integration. Pre-configured with Ubuntu 22.04 LTS, code-server, and automated validation.
 
 ## Features
 
-- **Rocky Linux 9** (stable LTS) with modern tooling (`git`, `vim`, `jq`, `tree`, `gcc`, `make`)
+- **Ubuntu 22.04 LTS** with modern tooling (`git`, `vim`, `jq`, `tree`, `gcc`, `make`)
 - **code-server** (VS Code in browser) with VSCodium compatibility
 - **Claude Code CLI** (`claude` command) for terminal AI assistance
 - **Global permissions** pre-configured for seamless Claude Code operation
