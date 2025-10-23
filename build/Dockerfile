@@ -1,5 +1,5 @@
-# Rocky Linux 10 base - community maintained by Rocky Linux Foundation
-FROM rockylinux/rockylinux:10
+# Rocky Linux 9 base - stable LTS release with better repository support
+FROM rockylinux/rockylinux:9
 
 # Set environment variables
 ENV LANG=en_US.UTF-8 \
@@ -7,15 +7,22 @@ ENV LANG=en_US.UTF-8 \
     CHROME_BIN=/usr/bin/google-chrome-stable
 
 # Install core system packages using DNF
-# Rocky 10 uses DNF exclusively (no yum compatibility layer)
-RUN dnf update -y && \
-    dnf install -y \
+# Using Rocky 9 for stability and reliable repository access
+# Split into smaller steps for better error visibility and caching
+RUN dnf makecache --refresh || dnf makecache
+
+RUN dnf update -y --skip-broken --nobest || true
+
+RUN dnf install -y \
         sudo \
         curl \
         wget \
         ca-certificates \
         git \
         vim \
+    && dnf clean all
+
+RUN dnf install -y \
         gnupg2 \
         unzip \
         xz \
@@ -29,10 +36,9 @@ RUN dnf update -y && \
     rm -rf /var/cache/dnf/*
 
 # Install Google Chrome via DNF (auto-resolves dependencies)
-# Note: Rocky 10 requires special handling for Google's SHA-1 signed key
+# Rocky 9 handles Google's GPG key more reliably
 RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub -o /tmp/linux_signing_key.pub && \
-    (rpm --import --nodigest --nosignature /tmp/linux_signing_key.pub 2>&1 | grep -v "warning" || \
-    echo "Note: GPG key imported with expected SHA-1 warnings on Rocky 10") && \
+    rpm --import /tmp/linux_signing_key.pub && \
     echo "[google-chrome]" > /etc/yum.repos.d/google-chrome.repo && \
     echo "name=Google Chrome" >> /etc/yum.repos.d/google-chrome.repo && \
     echo "baseurl=https://dl.google.com/linux/chrome/rpm/stable/x86_64" >> /etc/yum.repos.d/google-chrome.repo && \

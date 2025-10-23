@@ -1,0 +1,7 @@
+# Minimal test to isolate the dnf issue
+FROM rockylinux/rockylinux:9
+
+# Test basic dnf operations
+RUN dnf makecache --refresh
+RUN dnf update -y
+RUN dnf install -y sudo curl
