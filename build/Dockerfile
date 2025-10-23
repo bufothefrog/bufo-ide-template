@@ -8,11 +8,7 @@ ENV LANG=en_US.UTF-8 \
 
 # Install core system packages using DNF
 # Using Rocky 9 for stability and reliable repository access
-# Split into smaller steps for better error visibility and caching
-RUN dnf makecache --refresh || dnf makecache
-
-RUN dnf update -y --skip-broken --nobest || true
-
+# Avoiding dnf update to prevent repository sync issues
 RUN dnf install -y \
         sudo \
         curl \
@@ -20,9 +16,6 @@ RUN dnf install -y \
         ca-certificates \
         git \
         vim \
-    && dnf clean all
-
-RUN dnf install -y \
         gnupg2 \
         unzip \
         xz \
