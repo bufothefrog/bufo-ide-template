@@ -43,20 +43,16 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code CLI globally
-# This provides the 'claude' command for terminal usage
-RUN npm install -g @anthropic/claude-code
-
-# Note: Browser automation is handled by Chrome DevTools MCP via Claude Code
+# Note: Browser automation is handled by Chrome DevTools MCP via Claude Code extension
 # Puppeteer/Playwright are NOT installed to reduce image size (~500MB savings)
 # If users need them for custom scripts, they can install via: npm install -g puppeteer
+# Claude Code CLI (@anthropic/claude-code) can be installed manually if needed: npm install -g @anthropic/claude-code
 
 # Verify installations
 RUN google-chrome-stable --version --no-sandbox 2>/dev/null || \
     echo "Chrome installed (version check requires display)" && \
     node --version && \
-    npm --version && \
-    claude --version
+    npm --version
 
 # Create coder user with sudo privileges
 RUN useradd -m -s /bin/bash coder && \
