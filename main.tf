@@ -11,8 +11,8 @@ provider "docker" {}
 # --- Template Metadata ---
 locals {
   template_name         = "bufo-ide-template"
-  template_display_name = "Bufo IDE Template"
-  template_description  = "AI-powered dev environment with Chrome/GitHub MCP, Code Canvas. Auto GitHub auth, repo clone at creation."
+  template_display_name = "Bufo IDE Template (Ubuntu 22.04)"
+  template_description  = "Ubuntu 22.04 LTS dev environment with Claude Code, Chrome/GitHub MCP, Code Canvas. Auto GitHub auth, repo clone at creation."
   template_icon         = "/emojis/1f438.png"
 }
 
@@ -195,6 +195,10 @@ resource "coder_agent" "main" {
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_TOKEN"
       }
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upwired/context7"]
     }
   }
 }
@@ -323,6 +327,28 @@ Claude Code can now interact with GitHub:
 - **MCP Server**: \`@github/github-mcp-server\`
 - **Authentication**: Uses your GitHub OAuth token from Coder
 - **Capabilities**: Full GitHub API access via MCP
+
+---
+
+## 🔍 Context7 MCP Integration
+
+**Context7 MCP Server** is configured for enhanced context management!
+
+Claude Code can now use Context7 to:
+- Build and maintain dynamic context about your codebase
+- Track code relationships and dependencies
+- Provide smarter code suggestions with better context awareness
+- Understand project structure more deeply
+- Improve code navigation and exploration
+
+**Example prompts for Claude:**
+- "Use context7 to analyze this project structure"
+- "Show me how these modules are related"
+- "Help me understand the data flow in this codebase"
+
+**Technical details:**
+- **MCP Server**: \`@upwired/context7\`
+- **Capabilities**: Advanced context building and code understanding
 
 ---
 
