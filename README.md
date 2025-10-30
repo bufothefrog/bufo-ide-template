@@ -1,6 +1,6 @@
-# Bufo IDE Template for Coder
+# Bufo IDE Template for Coder (Ubuntu 22.04 LTS)
 
-AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and GitHub integration. Pre-configured with Ubuntu 22.04 LTS, code-server, and automated validation.
+AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and GitHub integration. Built on Ubuntu 22.04 LTS for maximum stability and reliability. Includes code-server, automated validation, and seamless GitHub authentication.
 
 ## Features
 
@@ -8,11 +8,10 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 - **code-server** (VS Code in browser) with VSCodium compatibility
 - **Claude Code CLI** (`claude` command) for terminal AI assistance
 - **Global permissions** pre-configured for seamless Claude Code operation
-- **Pre-configured MCP servers**: Chrome DevTools & GitHub
+- **Pre-configured MCP servers**: Chrome DevTools, GitHub & Context7
 - **Code Canvas** for visual code exploration
 - **Automatic GitHub authentication** via Coder OAuth
 - **Persistent home volumes** per workspace
-- **Pre-commit hooks** for local validation
 
 ## Quick Start
 
@@ -20,15 +19,13 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 
 - Coder instance with GitHub OAuth configured
 - [Coder CLI](https://coder.com/docs/install) installed locally
-- Python 3, Docker, and Terraform (for validation)
 
 ### Setup (One-Time)
 
 ```bash
-# 1. Clone and setup
+# 1. Clone repository
 git clone <your-repo-url>
 cd bufo-ide-template
-./setup-hooks.sh
 
 # 2. Login to Coder
 coder login https://coder.bufothefrog.com
@@ -40,7 +37,7 @@ coder login https://coder.bufothefrog.com
 # 1. Make changes
 vim main.tf
 
-# 2. Commit (hooks validate automatically)
+# 2. Commit changes
 git add .
 git commit -m "Update template"
 
@@ -54,28 +51,10 @@ coder create test-workspace --template bufo-ide-template
 git push origin main
 ```
 
-## What Gets Validated
-
-Pre-commit hooks automatically check:
-- ✅ Terraform formatting & validation
-- ✅ Dockerfile linting (hadolint)
-- ✅ Docker build success
-- ✅ YAML syntax
-- ✅ Shell script validation
-- ✅ File hygiene (whitespace, line endings)
-
-**Errors are caught before commit** - no broken templates!
-
 ## Quick Commands
 
 ```bash
-# Run hooks manually
-pre-commit run --all-files
-
-# Update hook versions
-pre-commit autoupdate
-
-# Deploy without committing
+# Deploy template to Coder
 coder templates push bufo-ide-template --directory . --yes
 
 # Test Docker build
@@ -119,8 +98,10 @@ extensions = [
 Edit `build/Dockerfile`:
 
 ```dockerfile
-RUN dnf install -y python3 python3-pip && \
-    dnf clean all
+RUN apt-get update && \
+    apt-get install -y python3 python3-pip && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 ```
 
 ## Troubleshooting

@@ -36,17 +36,18 @@ database:
 ### Template Configuration
 
 **Name**: `bufo-ide-template`
-**Display Name**: Bufo IDE Template
+**Display Name**: Bufo IDE Template (Ubuntu 22.04)
 **Icon**: 🐸 (frog emoji)
 
 **Default Resources**:
 - CPU: 4 cores (adjustable 1-16)
 - Memory: 8192 MB / 8 GB (adjustable 2-32 GB)
 
-**Base Image**: Rocky Linux 10
+**Base Image**: Ubuntu 22.04 LTS
 - Built from `build/Dockerfile`
 - Cached per workspace ID
-- Rebuilds on Dockerfile changes
+- Rebuilds on Dockerfile changes via `BUILD_VERSION` env var
+- Uses APT package manager for reliability
 
 ## Editor Configuration
 
@@ -605,8 +606,8 @@ SKIP=terraform_validate,check-docker-build git commit -m "message"
 python3 --version
 pip3 --version
 
-# Install pip if missing (Rocky Linux)
-sudo dnf install python3-pip
+# Install pip if missing (Ubuntu)
+sudo apt-get update && sudo apt-get install -y python3-pip
 
 # Install pre-commit
 pip3 install --user pre-commit
@@ -617,11 +618,12 @@ export PATH=$PATH:~/.local/bin
 
 ## Technical Notes
 
-### Rocky Linux 10 Considerations
+### Ubuntu 22.04 LTS Benefits
 
-- **DNF only**: No yum compatibility layer
-- **Chrome GPG key**: Requires `--nodigest --nosignature` import flags (SHA-1 signature)
-- **Modern packages**: Uses up-to-date versions from Rocky repos
+- **APT reliability**: Excellent mirror availability worldwide
+- **LTS support**: Supported until 2027 with security updates
+- **Package availability**: Vast ecosystem of .deb packages
+- **Chrome integration**: Native .deb repository support
 
 ### Security
 
@@ -650,4 +652,4 @@ export PATH=$PATH:~/.local/bin
 - [Claude Code MCP Documentation](https://docs.anthropic.com/claude-code/mcp)
 - [Open VSX Registry](https://open-vsx.org/)
 - [Pre-commit Framework](https://pre-commit.com/)
-- [Rocky Linux Documentation](https://docs.rockylinux.org/)
+- [Ubuntu Documentation](https://help.ubuntu.com/)
