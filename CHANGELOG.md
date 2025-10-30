@@ -2,6 +2,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2025-10-30
+
+### Added
+
+- **Shared Claude Credentials** - One login for all workspaces!
+  - New shared volume: `coder-claude-{user-id}` per user
+  - Mounted to `/home/coder/.claude` in every workspace
+  - Authenticate once, use everywhere
+  - Credentials preserved across workspace rebuilds
+
+- **Claude Code CLI with Retry Logic**
+  - 3 automatic retry attempts with 5-second delays
+  - Explicit npm registry configuration
+  - Graceful failure if install doesn't succeed
+  - VS Code extension still works even if CLI fails
+
+- **Migration Guide** - Comprehensive documentation in [MIGRATION.md](MIGRATION.md)
+  - In-place update instructions
+  - Fresh start option
+  - Troubleshooting guide
+  - FAQ section
+
+### Changed
+
+- Settings.json only created if it doesn't exist (preserves user customizations)
+- Improved permissions handling for `.claude` directory
+- Build version bumped to v2.1
+
+### Technical Details
+
+**New Resources:**
+- `docker_volume.claude_credentials` - Shared per-user volume for Claude auth
+- Volume mounted at `/home/coder/.claude` in all workspaces
+- Automatic ownership fix: `chown -R coder:coder ~/.claude`
+
+**Volume Architecture:**
+```
+Per-User (shared across all workspaces):
+  coder-claude-{user-id}/ → /home/coder/.claude
+    ├── settings.json
+    ├── credentials.json
+    └── session.json
+
+Per-Workspace (isolated):
+  coder-{workspace-id}-home/ → /home/coder
+    └── <all your files>
+```
+
 ## [2.0.0] - 2025-10-23
 
 ### Major Changes - Breaking

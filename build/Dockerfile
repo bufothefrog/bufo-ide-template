@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     CHROME_BIN=/usr/bin/google-chrome-stable \
-    BUILD_VERSION=v2
+    BUILD_VERSION=v2.1
 
 # Install core system packages using APT
 # Ubuntu has more reliable repository mirrors than Rocky Linux
@@ -44,9 +44,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Claude Code CLI globally
+# Install Claude Code CLI globally with retry logic for reliability
 # This provides the 'claude' command for terminal usage
-RUN npm install -g @anthropic-ai/claude-code
+RUN npm config set registry https://registry.npmjs.org/ && \
+    for i in 1 2 3; do \
+        npm install -g @anthropic-ai/claude-code && break || \
+        (echo "Retry $i/3: npm install failed, retrying in 5s..." && sleep 5); \
+    done || echo "Warning: Claude Code CLI installation failed after 3 attempts"
 
 # Note: Browser automation is handled by Chrome DevTools MCP via Claude Code extension
 # Puppeteer/Playwright are NOT installed to reduce image size (~500MB savings)

@@ -93,6 +93,26 @@ resource "docker_volume" "home" {
   }
 }
 
+# --- Shared Claude credentials volume (one per user) ---
+# This allows all workspaces for a user to share Claude authentication
+resource "docker_volume" "claude_credentials" {
+  name = "coder-claude-${data.coder_workspace_owner.me.id}"
+
+  labels {
+    label = "coder.owner.id"
+    value = data.coder_workspace_owner.me.id
+  }
+
+  labels {
+    label = "coder.owner.name"
+    value = data.coder_workspace_owner.me.name
+  }
+
+  lifecycle {
+    ignore_changes = all
+  }
+}
+
 # --- Custom workspace image ---
 resource "docker_image" "workspace" {
   name = "coder-${data.coder_workspace.me.id}"
@@ -126,6 +146,13 @@ resource "docker_container" "workspace" {
   volumes {
     container_path = "/home/coder"
     volume_name    = docker_volume.home.name
+    read_only      = false
+  }
+
+  # Shared Claude credentials directory (one per user, shared across all workspaces)
+  volumes {
+    container_path = "/home/coder/.claude"
+    volume_name    = docker_volume.claude_credentials.name
     read_only      = false
   }
 
@@ -206,9 +233,16 @@ MCP_EOF
       fi
     done
 
-    # Configure global Claude Code permissions
+    # Ensure Claude credentials directory exists and has correct permissions
+    # This directory is mounted from a shared volume (one per user, shared across workspaces)
     mkdir -p ~/.claude
-    cat > ~/.claude/settings.json << 'CLAUDE_SETTINGS_EOF'
+    chown -R coder:coder ~/.claude 2>/dev/null || true
+    chmod 700 ~/.claude
+
+    # Configure global Claude Code permissions (only if settings.json doesn't exist)
+    # This preserves authentication across workspace rebuilds
+    if [ ! -f ~/.claude/settings.json ]; then
+      cat > ~/.claude/settings.json << 'CLAUDE_SETTINGS_EOF'
 {
   "alwaysThinkingEnabled": false,
   "permissions": {
@@ -236,6 +270,7 @@ MCP_EOF
   "env": {}
 }
 CLAUDE_SETTINGS_EOF
+    fi
 
     # Create welcome guide for first-time users
     REPO_MESSAGE=""
@@ -485,6 +520,11 @@ resource "coder_metadata" "workspace_info" {
   item {
     key   = "Home Volume"
     value = docker_volume.home.name
+  }
+
+  item {
+    key   = "Claude Credentials"
+    value = "Shared across all workspaces (${docker_volume.claude_credentials.name})"
   }
 }
 

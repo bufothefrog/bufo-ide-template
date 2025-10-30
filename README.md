@@ -7,6 +7,7 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 - **Ubuntu 22.04 LTS** with modern tooling (`git`, `vim`, `jq`, `tree`, `gcc`, `make`)
 - **code-server** (VS Code in browser) with VSCodium compatibility
 - **Claude Code CLI** (`claude` command) for terminal AI assistance
+- **Shared Claude credentials** - Authenticate once, use in all workspaces! 🎉
 - **Global permissions** pre-configured for seamless Claude Code operation
 - **Pre-configured MCP servers**: Chrome DevTools, GitHub & Context7
 - **Code Canvas** for visual code exploration
@@ -144,9 +145,16 @@ When creating a workspace:
 | `repo_url` | GitHub repository to auto-clone | Empty (manual clone) |
 | `repo_dest` | Clone destination path | `/home/coder/project` |
 
+## Migrating from Rocky Linux?
+
+See [MIGRATION.md](MIGRATION.md) for comprehensive migration guide.
+
+**TL;DR:** Just run `coder update <workspace-name>` - your data is safe!
+
 ## Resources
 
 - [Coder Documentation](https://coder.com/docs)
 - [Claude Code Documentation](https://docs.anthropic.com/claude-code)
 - [Chrome DevTools MCP](https://github.com/snaggle-ai/chrome-devtools-mcp)
 - [GitHub MCP](https://github.com/github/github-mcp-server)
+- [Migration Guide](MIGRATION.md)
