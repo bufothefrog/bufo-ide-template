@@ -2,6 +2,90 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2025-11-02
+
+### Added
+
+- **Claude Code CLI Restored** - `claude` command now available in terminal
+  - Package: `@anthropic-ai/claude-code` via npm
+  - Added retry logic (3 attempts) for reliable installation
+  - Registry explicitly set to https://registry.npmjs.org/
+  - Provides terminal AI assistance alongside VS Code extension
+
+- **Shared Claude Credentials** - Authenticate once, use in all workspaces! 🎉
+  - New `docker_volume.claude_credentials` shared across all user workspaces
+  - Volume mounted at `/home/coder/.claude` in every workspace
+  - Keyed by user ID: `coder-claude-${data.coder_workspace_owner.me.id}`
+  - Preserves authentication (`credentials.json`, `session.json`) across workspace rebuilds
+  - Settings file only created if it doesn't exist (preserves user customizations)
+
+- **Context7 MCP Server** - Enhanced context management for codebases
+  - Package: `@upwired/context7`
+  - Helps Claude build dynamic context about code relationships
+  - Improves code navigation and understanding
+
+- **Default Workspace Folder** - VS Code now opens at the cloned repository location by default
+  - Configured via `folder` parameter in code-server module
+  - Uses the `repo_dest` parameter value (default: `/home/coder/project`)
+  - Eliminates manual navigation to project folder after workspace launch
+
+- **Privacy Settings** - Microsoft telemetry and experiments disabled by default
+  - `telemetry.telemetryLevel = "off"` - Disables all telemetry collection
+  - `redhat.telemetry.enabled = false` - Disables Red Hat extension telemetry
+  - `extensions.ignoreRecommendations = true` - Stops extension recommendation prompts
+  - `workbench.enableExperiments = false` - Disables A/B testing experiments
+  - `workbench.settings.enableNaturalLanguageSearch = false` - Disables cloud-based settings search
+  - `update.mode = "none"` - Disables automatic update checks
+
+### Changed
+
+- Build version bumped to v2.2 (forces fresh Docker builds)
+- Enhanced VS Code settings with privacy-focused defaults
+- Removed pre-commit hooks configuration (simplified workflow)
+- Updated README: removed setup-hooks.sh references
+- Template display name now includes "Ubuntu 22.04" for clarity
+
+### Fixed
+
+- Claude Code CLI installation now more reliable with retry logic
+- npm registry explicitly configured to avoid mirror issues
+
+### Technical Details
+
+**Shared Credentials Volume:**
+```hcl
+resource "docker_volume" "claude_credentials" {
+  name = "coder-claude-${data.coder_workspace_owner.me.id}"
+  # Persists ~/.claude directory across all user workspaces
+}
+```
+
+**Claude CLI Installation with Retry:**
+```dockerfile
+RUN npm config set registry https://registry.npmjs.org/ && \
+    for i in 1 2 3; do \
+        npm install -g @anthropic-ai/claude-code && break || \
+        (echo "Retry $i/3: npm install failed, retrying in 5s..." && sleep 5); \
+    done
+```
+
+**Code-Server Module Updates:**
+```hcl
+module "code_server" {
+  folder = data.coder_parameter.repo_dest.value  # Opens at project folder by default
+
+  settings = {
+    # Privacy settings added
+    "telemetry.telemetryLevel" = "off"
+    "redhat.telemetry.enabled" = false
+    "extensions.ignoreRecommendations" = true
+    "workbench.enableExperiments" = false
+    "workbench.settings.enableNaturalLanguageSearch" = false
+    "update.mode" = "none"
+  }
+}
+```
+
 ## [2.1.0] - 2025-10-30
 
 ### Added
