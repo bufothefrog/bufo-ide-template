@@ -7,7 +7,7 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 - **Ubuntu 22.04 LTS** with modern tooling (`git`, `vim`, `jq`, `tree`, `gcc`, `make`)
 - **code-server** (VS Code in browser) with VSCodium compatibility
 - **Claude Code CLI** (`claude` command) for terminal AI assistance
-- **Shared Claude credentials** - Authenticate once, use in all workspaces! 🎉
+- **Shared Claude credentials** - Authenticate once, use in all workspaces (chat history stays per-workspace)! 🎉
 - **Default workspace folder** - VS Code opens at your project location automatically
 - **Privacy-focused defaults** - Microsoft telemetry and experiments disabled
 - **Global permissions** pre-configured for seamless Claude Code operation

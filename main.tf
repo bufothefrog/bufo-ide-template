@@ -150,8 +150,9 @@ resource "docker_container" "workspace" {
   }
 
   # Shared Claude credentials directory (one per user, shared across all workspaces)
+  # Only credentials and settings are shared, not chat history or projects
   volumes {
-    container_path = "/home/coder/.claude"
+    container_path = "/home/coder/.claude-shared"
     volume_name    = docker_volume.claude_credentials.name
     read_only      = false
   }
@@ -264,16 +265,27 @@ MCP_EOF
       fi
     done
 
-    # Ensure Claude credentials directory exists and has correct permissions
-    # This directory is mounted from a shared volume (one per user, shared across workspaces)
+    # Setup Claude Code directory structure
+    # ~/.claude-shared is a volume mount shared across workspaces (credentials + settings only)
+    # ~/.claude is per-workspace (chat history, projects, todos, etc.)
+    mkdir -p ~/.claude-shared
     mkdir -p ~/.claude
-    chown -R coder:coder ~/.claude 2>/dev/null || true
-    chmod 700 ~/.claude
+    chown -R coder:coder ~/.claude-shared ~/.claude 2>/dev/null || true
+    chmod 700 ~/.claude-shared ~/.claude
 
-    # Configure global Claude Code permissions (only if settings.json doesn't exist)
-    # This preserves authentication across workspace rebuilds
-    if [ ! -f ~/.claude/settings.json ]; then
-      cat > ~/.claude/settings.json << 'CLAUDE_SETTINGS_EOF'
+    # Symlink credentials and settings from shared volume
+    # This allows authentication to persist across workspaces while keeping chat history isolated
+    if [ ! -L ~/.claude/credentials.json ]; then
+      # Remove any existing credentials.json if it's a regular file
+      [ -f ~/.claude/credentials.json ] && rm ~/.claude/credentials.json
+      # Create symlink to shared credentials
+      ln -sf ~/.claude-shared/credentials.json ~/.claude/credentials.json
+    fi
+
+    if [ ! -L ~/.claude/settings.json ]; then
+      # If settings.json doesn't exist in shared location, initialize it
+      if [ ! -f ~/.claude-shared/settings.json ]; then
+        cat > ~/.claude-shared/settings.json << 'CLAUDE_SETTINGS_EOF'
 {
   "alwaysThinkingEnabled": false,
   "permissions": {
@@ -301,6 +313,11 @@ MCP_EOF
   "env": {}
 }
 CLAUDE_SETTINGS_EOF
+      fi
+      # Remove any existing settings.json if it's a regular file
+      [ -f ~/.claude/settings.json ] && rm ~/.claude/settings.json
+      # Create symlink to shared settings
+      ln -sf ~/.claude-shared/settings.json ~/.claude/settings.json
     fi
 
     # Create welcome guide for first-time users

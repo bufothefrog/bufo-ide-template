@@ -108,19 +108,28 @@ The template is defined in [main.tf](main.tf) with this architecture:
 
 **Per-User Shared Volume** (authentication persists across workspaces):
 ```
-coder-claude-{user-id}/ → /home/coder/.claude
-  ├── settings.json        # Global permissions config
-  ├── credentials.json     # Claude auth tokens
-  └── session.json         # Session data
+coder-claude-{user-id}/ → /home/coder/.claude-shared
+  ├── settings.json        # Global permissions config (symlinked to ~/.claude/settings.json)
+  └── credentials.json     # Claude auth tokens (symlinked to ~/.claude/credentials.json)
 ```
 
 **Per-Workspace Volume** (isolated data):
 ```
 coder-{workspace-id}-home/ → /home/coder
+  ├── .claude/
+  │   ├── credentials.json → ../.claude-shared/credentials.json  # Symlink to shared auth
+  │   ├── settings.json → ../.claude-shared/settings.json        # Symlink to shared settings
+  │   ├── history.jsonl    # Per-workspace chat history
+  │   ├── projects/        # Per-workspace project data
+  │   ├── todos/           # Per-workspace todos
+  │   └── session-env/     # Per-workspace session data
   └── <all workspace files and projects>
 ```
 
-This design means users authenticate to Claude once and it works in all their workspaces.
+This design means:
+- Authenticate to Claude **once** - credentials shared across all workspaces
+- Settings shared globally for consistency
+- Chat history, projects, and todos are **isolated per workspace** for better organization
 
 ### MCP Server Configuration
 
@@ -236,7 +245,8 @@ Global permissions are pre-configured at `~/.claude/settings.json` ([main.tf:244
 ### Shared Credentials Volume
 The `docker_volume.claude_credentials` ([main.tf:98-114](main.tf#L98-L114)) is shared across all workspaces for a single user (keyed by `data.coder_workspace_owner.me.id`). This means:
 - Authenticate to Claude once, use everywhere
-- Credentials persist even when workspaces are deleted/rebuilt
+- Credentials and settings persist even when workspaces are deleted/rebuilt
+- Chat history, projects, and todos remain isolated per workspace
 - Each user has their own isolated credentials volume
 
 ### Template Caching
