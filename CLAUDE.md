@@ -258,4 +258,148 @@ Version 2.0.0 switched from Rocky Linux to Ubuntu 22.04 LTS for better repositor
 - **Storage**: Home volumes stored at `/mnt/ssd-cluster/data/coder/home` on host
 - **Database**: PostgreSQL 17 storing Coder state
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive infrastructure details and troubleshooting.
+## Troubleshooting
+
+### Template Issues
+
+#### Template push fails with authentication error
+```bash
+# Check login status
+coder login https://coder.bufothefrog.com
+
+# List tokens
+coder tokens ls
+
+# Create new token
+coder tokens create --lifetime 720h
+```
+
+#### Template push fails with network error
+```bash
+# Verify connectivity (VPN/local network required)
+ping coder.bufothefrog.com
+
+# Check Coder is running
+curl https://coder.bufothefrog.com/healthz
+```
+
+#### Terraform validation fails
+```bash
+# Check Terraform version
+terraform version  # Should be 1.9.0+
+
+# Format files
+terraform fmt
+
+# Initialize (no backend)
+terraform init -backend=false
+
+# Validate
+terraform validate
+```
+
+### Build Issues
+
+#### Docker build fails during template push
+```bash
+# Check Docker daemon
+docker ps
+
+# Check disk space on Coder host
+df -h
+
+# Clean Docker cache on Coder host
+docker system prune -a
+```
+
+#### Image size too large
+Check layer sizes and optimize:
+- Use multi-stage builds
+- Clean package managers in same layer: `apt-get clean && rm -rf /var/lib/apt/lists/*`
+- Combine RUN commands to reduce layers
+
+### Workspace Issues
+
+#### Workspace fails to start
+```bash
+# View build logs
+coder logs my-workspace
+
+# Common issues:
+# - Dockerfile syntax error
+# - Missing base image
+# - Resource limits exceeded
+# - Volume mount failure
+```
+
+#### GitHub authentication not working
+```bash
+# Check in workspace
+echo $GITHUB_TOKEN  # Should output token
+
+# Verify Coder OAuth:
+# Settings → External Authentication → GitHub → Authenticated
+
+# Re-authenticate if needed:
+# Coder UI → Profile → External Auth → GitHub → Connect
+```
+
+#### Extensions not installing
+```bash
+# Check code-server logs
+cat ~/.local/share/code-server/logs/*.log
+
+# Verify Open VSX access
+curl https://open-vsx.org/api/yzhang/markdown-all-in-one
+
+# Manual install
+code-server --install-extension yzhang.markdown-all-in-one
+```
+
+#### MCP servers not appearing in Claude Code
+```bash
+# Check MCP config exists
+cat ~/.config/Code/User/globalStorage/anthropic.claude-code/mcp_config.json
+
+# Verify npx works
+npx -y chrome-devtools-mcp@latest --version
+
+# Check Claude Code extension installed
+code-server --list-extensions | grep anthropic.claude-code
+
+# Reload window in VS Code
+# Command Palette → Developer: Reload Window
+```
+
+#### Performance issues
+```bash
+# Check resource usage
+docker stats coder-{user}-{workspace}
+
+# Increase resources: Edit main.tf variables (cpu, memory_mb)
+
+# Optimize workspace:
+# - Close unused applications
+# - Disable unnecessary extensions
+# - Reduce concurrent builds
+```
+
+## Technical Notes
+
+### Security
+- **GitHub token**: Injected as env var, not stored in image
+- **Credential helper**: Uses ephemeral token from Coder OAuth
+- **Volume isolation**: Each workspace has dedicated volume
+- **Network isolation**: Workspaces can be network-isolated if needed
+
+### Performance
+- **Image caching**: Docker images cached per workspace ID
+- **Volume persistence**: Data persists across workspace rebuilds
+- **Build optimization**: Multi-RUN commands combined to reduce layers
+- **No Puppeteer**: Saves ~500MB, install if needed: `npm install -g puppeteer`
+
+### Compatibility
+- **VS Code extensions**: Must be on Open VSX Registry
+- **MCP servers**: Any npm package with Claude Code MCP protocol
+- **Git operations**: Work transparently with GitHub OAuth token
+- **Browser access**: Chrome DevTools Protocol via MCP
