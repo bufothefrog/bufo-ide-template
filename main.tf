@@ -30,6 +30,12 @@ data "coder_external_auth" "github" {
 
 locals {
   username = coalesce(data.coder_workspace_owner.me.full_name, data.coder_workspace_owner.me.name)
+
+  # Extract repo name from URL (e.g., "https://github.com/user/repo" -> "repo")
+  repo_name = data.coder_parameter.repo_url.value != "" ? basename(trimsuffix(data.coder_parameter.repo_url.value, ".git")) : ""
+
+  # Set folder to cloned repo path if repo_url provided, otherwise use repo_dest
+  code_server_folder = data.coder_parameter.repo_url.value != "" ? "${data.coder_parameter.repo_dest.value}/${local.repo_name}" : data.coder_parameter.repo_dest.value
 }
 
 # --- Template Parameters (visible in Coder UI when creating workspace) ---
@@ -268,10 +274,14 @@ MCP_EOF
     # Setup Claude Code directory structure
     # ~/.claude-shared is a volume mount shared across workspaces (credentials + settings only)
     # ~/.claude is per-workspace (chat history, projects, todos, etc.)
-    mkdir -p ~/.claude-shared
-    mkdir -p ~/.claude
-    chown -R coder:coder ~/.claude-shared ~/.claude 2>/dev/null || true
-    chmod 700 ~/.claude-shared ~/.claude
+    mkdir -p ~/.claude-shared 2>/dev/null || true
+    mkdir -p ~/.claude 2>/dev/null || true
+
+    # Fix ownership and permissions using sudo (directories may have been created by root)
+    sudo chown -R coder:coder ~/.claude-shared 2>/dev/null || true
+    sudo chown -R coder:coder ~/.claude 2>/dev/null || true
+    sudo chmod 700 ~/.claude-shared 2>/dev/null || true
+    sudo chmod 700 ~/.claude 2>/dev/null || true
 
     # Symlink credentials and settings from shared volume
     # This allows authentication to persist across workspaces while keeping chat history isolated
@@ -550,7 +560,7 @@ module "code_server" {
   source   = "registry.coder.com/modules/code-server/coder"
   version  = "1.0.10"
   agent_id = coder_agent.main.id
-  folder   = data.coder_parameter.repo_dest.value
+  folder   = local.code_server_folder
 
   # Auto-install extensions from Open VSX
   extensions = [
