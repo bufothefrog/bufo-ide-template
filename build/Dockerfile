@@ -6,7 +6,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8 \
     CHROME_BIN=/usr/bin/google-chrome-stable \
-    BUILD_VERSION=v2.1
+    BUILD_VERSION=v2.2
 
 # Install core system packages using APT
 # Ubuntu has more reliable repository mirrors than Rocky Linux

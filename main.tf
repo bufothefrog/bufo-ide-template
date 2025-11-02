@@ -471,6 +471,7 @@ module "code_server" {
   source   = "registry.coder.com/modules/code-server/coder"
   version  = "1.0.10"
   agent_id = coder_agent.main.id
+  folder   = data.coder_parameter.repo_dest.value
 
   # Auto-install extensions from Open VSX
   extensions = [
@@ -487,6 +488,14 @@ module "code_server" {
     "editor.minimap.enabled"             = false
     "workbench.startupEditor"            = "none"
     "keyboard.dispatch"                  = "keyCode"
+
+    # Privacy settings - opt out of telemetry
+    "telemetry.telemetryLevel"                      = "off"
+    "redhat.telemetry.enabled"                      = false
+    "extensions.ignoreRecommendations"              = true
+    "workbench.enableExperiments"                   = false
+    "workbench.settings.enableNaturalLanguageSearch" = false
+    "update.mode"                                   = "none"
   }
 }
 
