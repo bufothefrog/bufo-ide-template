@@ -130,7 +130,7 @@ terraform version  # Check installed
 terraform fmt      # Auto-fix formatting
 ```
 
-**More issues?** See [DEPLOYMENT.md](DEPLOYMENT.md#troubleshooting) for comprehensive troubleshooting.
+**More issues?** See [CLAUDE.md](CLAUDE.md#troubleshooting) for comprehensive troubleshooting.
 
 ## SSH Key Setup (One-Time)
 
@@ -157,11 +157,11 @@ SSH keys are auto-generated when you create a workspace and persist in your home
 
 ## Advanced Configuration
 
-For detailed technical information:
-- **Infrastructure details** → [DEPLOYMENT.md](DEPLOYMENT.md)
-- **MCP server configuration** → [DEPLOYMENT.md](DEPLOYMENT.md#mcp-servers)
-- **VSCodium compatibility** → [DEPLOYMENT.md](DEPLOYMENT.md#editor-configuration)
-- **Workspace lifecycle** → [DEPLOYMENT.md](DEPLOYMENT.md#workspace-creation)
+For detailed technical information, see [CLAUDE.md](CLAUDE.md):
+- **Architecture overview** → [CLAUDE.md](CLAUDE.md#architecture)
+- **MCP server configuration** → [CLAUDE.md](CLAUDE.md#mcp-server-configuration)
+- **Common modifications** → [CLAUDE.md](CLAUDE.md#common-modifications)
+- **Troubleshooting** → [CLAUDE.md](CLAUDE.md#troubleshooting)
 
 ## Template Variables
 
