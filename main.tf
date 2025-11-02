@@ -204,6 +204,37 @@ resource "coder_agent" "main" {
     # This credential helper returns the OAuth token for any git operation
     git config --global credential.helper '!f() { echo "username=oauth2"; echo "password=$GITHUB_TOKEN"; }; f'
 
+    # Enable git auto-fetch every 60 seconds in the background
+    git config --global fetch.prune true
+    git config --global fetch.pruneTags true
+
+    # Setup SSH keys for Git operations (persists in home volume)
+    if [ ! -f ~/.ssh/id_ed25519 ]; then
+      echo "[coder] Generating SSH key for Git operations..."
+      mkdir -p ~/.ssh
+      ssh-keygen -t ed25519 -C "${data.coder_workspace_owner.me.email}" -f ~/.ssh/id_ed25519 -N ""
+      chmod 700 ~/.ssh
+      chmod 600 ~/.ssh/id_ed25519
+      chmod 644 ~/.ssh/id_ed25519.pub
+
+      # Configure SSH for GitHub
+      cat > ~/.ssh/config << 'SSH_CONFIG_EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    IdentitiesOnly yes
+SSH_CONFIG_EOF
+      chmod 600 ~/.ssh/config
+
+      # Add GitHub to known hosts
+      ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+      chmod 644 ~/.ssh/known_hosts
+
+      echo "[coder] SSH key generated! Add the public key to GitHub:"
+      echo "[coder] Public key location: ~/.ssh/id_ed25519.pub"
+    fi
+
     # Configure Claude Code MCP servers
     # Support both VS Code and VSCodium paths
     for config_dir in ~/.config/Code ~/.config/VSCodium ~/.config/Code\ -\ OSS; do
@@ -291,10 +322,41 @@ Clone any repo with: \`git clone https://github.com/user/repo\`"
 
 Your GitHub account is automatically connected! You can:
 - Clone private repos: \`git clone https://github.com/user/private-repo\`
-- Push changes: \`git push\`
+- Push changes: \`git push\` (works with HTTPS URLs)
 - No manual authentication needed 🎉
 
 Your GitHub token is injected via the GITHUB_TOKEN environment variable.
+
+**Git auto-fetch is enabled** - your local repository automatically fetches updates every 60 seconds.
+
+---
+
+## 🔑 SSH Key for Git (One-time Setup)
+
+An SSH key has been auto-generated for you at \`~/.ssh/id_ed25519\`.
+
+**To enable SSH-based git operations** (recommended for push/pull):
+
+1. View your public key:
+   \`\`\`bash
+   cat ~/.ssh/id_ed25519.pub
+   \`\`\`
+
+2. Add it to GitHub:
+   - Go to: https://github.com/settings/ssh/new
+   - Title: \`Coder - ${data.coder_workspace.me.name}\`
+   - Paste your public key
+   - Click "Add SSH key"
+
+3. Use SSH URLs for git operations:
+   \`\`\`bash
+   git remote set-url origin git@github.com:user/repo.git
+   \`\`\`
+
+**Benefits:**
+- More secure than HTTPS
+- No password prompts
+- Works across all workspaces (key persists in home volume)
 
 ---
 

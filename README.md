@@ -13,7 +13,9 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 - **Global permissions** pre-configured for seamless Claude Code operation
 - **Pre-configured MCP servers**: Chrome DevTools, GitHub & Context7
 - **Code Canvas** for visual code exploration
-- **Automatic GitHub authentication** via Coder OAuth
+- **Automatic GitHub authentication** via Coder OAuth (HTTPS)
+- **Auto-generated SSH keys** for secure git operations (persists across rebuilds)
+- **Git auto-fetch** - automatically fetches updates every 60 seconds
 - **Persistent home volumes** per workspace
 
 ## Quick Start
@@ -129,6 +131,29 @@ terraform fmt      # Auto-fix formatting
 ```
 
 **More issues?** See [DEPLOYMENT.md](DEPLOYMENT.md#troubleshooting) for comprehensive troubleshooting.
+
+## SSH Key Setup (One-Time)
+
+SSH keys are auto-generated when you create a workspace and persist in your home volume.
+
+**To enable SSH git operations:**
+
+1. View your public key in the workspace:
+   ```bash
+   cat ~/.ssh/id_ed25519.pub
+   ```
+
+2. Add to GitHub: https://github.com/settings/ssh/new
+
+3. Convert your git remotes to SSH:
+   ```bash
+   git remote set-url origin git@github.com:user/repo.git
+   ```
+
+**Benefits:**
+- More secure than HTTPS
+- No password prompts
+- SSH keys persist across workspace rebuilds
 
 ## Advanced Configuration
 
