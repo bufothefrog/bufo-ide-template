@@ -242,17 +242,36 @@ SSH_CONFIG_EOF
       echo "[coder] Public key location: ~/.ssh/id_ed25519.pub"
     fi
 
-    # Configure Claude Code MCP servers
-    # Support both VS Code and VSCodium paths
-    for config_dir in ~/.config/Code ~/.config/VSCodium ~/.config/Code\ -\ OSS; do
-      if [ -d "$config_dir" ] || [ "$config_dir" = "$HOME/.config/Code" ]; then
-        mkdir -p "$config_dir/User/globalStorage/anthropic.claude-code"
-        cat > "$config_dir/User/globalStorage/anthropic.claude-code/mcp_config.json" << 'MCP_EOF'
+    # Configure Claude Code MCP servers in ~/.claude.json
+    # The VS Code extension reads MCP config from the CLI's config file, not from globalStorage
+    # Configure headless Chrome for Docker container environment
+    if [ -f ~/.claude.json ]; then
+      # Update existing .claude.json file preserving other settings
+      jq '.mcpServers = {
+        "chrome-devtools": {
+          "command": "npx",
+          "args": ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
+        },
+        "github": {
+          "command": "npx",
+          "args": ["-y", "@github/github-mcp-server"],
+          "env": {
+            "GITHUB_PERSONAL_ACCESS_TOKEN": "'"$GITHUB_TOKEN"'"
+          }
+        },
+        "context7": {
+          "command": "npx",
+          "args": ["-y", "@upwired/context7"]
+        }
+      }' ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
+    else
+      # Create new .claude.json with MCP servers
+      cat > ~/.claude.json << 'CLAUDE_JSON_EOF'
 {
   "mcpServers": {
     "chrome-devtools": {
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest"]
+      "args": ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
     },
     "github": {
       "command": "npx",
@@ -267,9 +286,9 @@ SSH_CONFIG_EOF
     }
   }
 }
-MCP_EOF
-      fi
-    done
+CLAUDE_JSON_EOF
+      chmod 600 ~/.claude.json
+    fi
 
     # Setup Claude Code directory structure
     # ~/.claude-shared is a volume mount shared across workspaces (credentials + settings only)
@@ -330,208 +349,11 @@ CLAUDE_SETTINGS_EOF
       ln -sf ~/.claude-shared/settings.json ~/.claude/settings.json
     fi
 
-    # Create welcome guide for first-time users
-    REPO_MESSAGE=""
-    if [ -n "${data.coder_parameter.repo_url.value}" ]; then
-      REPO_MESSAGE="Your repository is being cloned to: \`${data.coder_parameter.repo_dest.value}\`
-
-Git is configured with your GitHub credentials automatically."
-    else
-      REPO_MESSAGE="Start coding in: \`/home/coder/project\`
-
-Clone any repo with: \`git clone https://github.com/user/repo\`"
-    fi
-
-    cat > ~/WELCOME.md << EOF
-# 👋 Welcome to your Coder Workspace!
-
-## ✅ GitHub Authentication
-
-Your GitHub account is automatically connected! You can:
-- Clone private repos: \`git clone https://github.com/user/private-repo\`
-- Push changes: \`git push\` (works with HTTPS URLs)
-- No manual authentication needed 🎉
-
-Your GitHub token is injected via the GITHUB_TOKEN environment variable.
-
-**Git auto-fetch is enabled** - your local repository automatically fetches updates every 60 seconds.
-
----
-
-## 🔑 SSH Key for Git (One-time Setup)
-
-An SSH key has been auto-generated for you at \`~/.ssh/id_ed25519\`.
-
-**To enable SSH-based git operations** (recommended for push/pull):
-
-1. View your public key:
-   \`\`\`bash
-   cat ~/.ssh/id_ed25519.pub
-   \`\`\`
-
-2. Add it to GitHub:
-   - Go to: https://github.com/settings/ssh/new
-   - Title: \`Coder - ${data.coder_workspace.me.name}\`
-   - Paste your public key
-   - Click "Add SSH key"
-
-3. Use SSH URLs for git operations:
-   \`\`\`bash
-   git remote set-url origin git@github.com:user/repo.git
-   \`\`\`
-
-**Benefits:**
-- More secure than HTTPS
-- No password prompts
-- Works across all workspaces (key persists in home volume)
-
----
-
-## 🤖 Claude Code Setup (One-time)
-
-To activate Claude Code in this workspace:
-
-1. Open the **Command Palette**:
-   - Press \`Ctrl+Shift+P\` (Linux/Windows)
-   - Press \`Cmd+Shift+P\` (Mac)
-
-2. Type and select: **"Claude Code: Sign In"**
-
-3. Choose: **Anthropic Max** (OAuth)
-
-4. Complete the browser sign-in flow
-
-✨ You only need to do this **once per workspace**
-
----
-
-## 🌐 Chrome DevTools Integration (MCP)
-
-**Google Chrome** is pre-installed with **Chrome DevTools MCP** configured!
-
-Claude Code can now interact directly with Chrome DevTools Protocol:
-- Navigate and interact with web pages
-- Inspect DOM elements
-- Monitor network requests
-- Debug JavaScript
-- Test web applications
-- Automate browser workflows
-- Take screenshots
-- Extract data
-
-**Example prompts for Claude:**
-- "Open example.com and inspect the page structure"
-- "Navigate to localhost:3000 and test the login form"
-- "Monitor network requests on my app and show me the API calls"
-- "Debug this JavaScript error in my app"
-- "Take a screenshot of the current page"
-
----
-
-## 🐙 GitHub MCP Integration
-
-**GitHub MCP Server** is configured with your GitHub credentials!
-
-Claude Code can now interact with GitHub:
-- Browse and search repositories
-- Create and manage issues
-- Create and review pull requests
-- Monitor GitHub Actions workflows
-- Analyze code and security findings
-- Access discussions and notifications
-
-**Example prompts for Claude:**
-- "Show me all open issues in my repository"
-- "Create a pull request from my current branch"
-- "Check the status of GitHub Actions on my PR"
-- "List all Dependabot alerts in this repo"
-- "Search for repositories about machine learning"
-
-**Technical details:**
-- **MCP Server**: \`@github/github-mcp-server\`
-- **Authentication**: Uses your GitHub OAuth token from Coder
-- **Capabilities**: Full GitHub API access via MCP
-
----
-
-## 🔍 Context7 MCP Integration
-
-**Context7 MCP Server** is configured for enhanced context management!
-
-Claude Code can now use Context7 to:
-- Build and maintain dynamic context about your codebase
-- Track code relationships and dependencies
-- Provide smarter code suggestions with better context awareness
-- Understand project structure more deeply
-- Improve code navigation and exploration
-
-**Example prompts for Claude:**
-- "Use context7 to analyze this project structure"
-- "Show me how these modules are related"
-- "Help me understand the data flow in this codebase"
-
-**Technical details:**
-- **MCP Server**: \`@upwired/context7\`
-- **Capabilities**: Advanced context building and code understanding
-
----
-
-## 🎨 Code Canvas
-
-**Code Canvas** extension is pre-installed for visual code exploration!
-
-Features:
-- View code flow on an infinite canvas
-- Visualize file relationships
-- Trace function calls and references
-- Track real-time changes (great for AI edits)
-- Layout algorithms for organizing files
-- Token reference tracking
-
-**How to use:**
-- Open Command Palette: \`Ctrl+Shift+P\`
-- Type: "Open Code Canvas"
-- Or click the Code Canvas icon in bottom right
-
-**Great for:**
-- Understanding AI-generated code changes
-- Exploring large codebases
-- Tracking function dependencies
-- Visualizing project structure
-
----
-
-## 📝 Markdown Support
-
-**Markdown All in One** extension is pre-installed!
-
-Features:
-- Keyboard shortcuts
-- Table of contents
-- Auto preview
-- List editing
-- Math support
-
----
-
-## 📂 Your Project
-$REPO_MESSAGE
-
----
-
-## 🎨 Theme
-
-Your IDE theme automatically follows your system (light/dark mode).
-
----
-
-Happy coding! 🚀
-EOF
 
     # Ensure project directory exists
     mkdir -p ~/project
 
-    echo "[coder] ✅ Workspace ready! GitHub authenticated, Chrome DevTools + GitHub MCP configured. Open WELCOME.md for next steps."
+    echo "[coder] ✅ Workspace ready! GitHub authenticated, Chrome DevTools + GitHub MCP configured."
   EOT
 
   # Connection to Docker container
