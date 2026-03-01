@@ -384,21 +384,24 @@ module "claude_code" {
   claude_binary_path  = "/usr/local/bin"
 
   # MCP servers (Chrome DevTools, GitHub, Context7)
+  # The module expects a top-level "mcpServers" key in the JSON
   mcp = jsonencode({
-    "chrome-devtools" = {
-      command = "npx"
-      args    = ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
-    }
-    "github" = {
-      command = "npx"
-      args    = ["-y", "@github/github-mcp-server"]
-      env = {
-        GITHUB_PERSONAL_ACCESS_TOKEN = "$GITHUB_TOKEN"
+    mcpServers = {
+      "chrome-devtools" = {
+        command = "npx"
+        args    = ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
       }
-    }
-    "context7" = {
-      command = "npx"
-      args    = ["-y", "@upwired/context7"]
+      "github" = {
+        command = "npx"
+        args    = ["-y", "@github/github-mcp-server"]
+        env = {
+          GITHUB_PERSONAL_ACCESS_TOKEN = "$GITHUB_TOKEN"
+        }
+      }
+      "context7" = {
+        command = "npx"
+        args    = ["-y", "@upwired/context7"]
+      }
     }
   })
 
@@ -410,9 +413,10 @@ module "claude_code" {
 }
 
 # --- Task resource (enables Coder Tasks tab) ---
+# Only created when running as a task (not in regular workspace mode)
 resource "coder_ai_task" "task" {
-  count  = data.coder_workspace.me.start_count
-  app_id = module.claude_code[count.index].task_app_id
+  count  = data.coder_task.me.enabled ? data.coder_workspace.me.start_count : 0
+  app_id = module.claude_code[0].task_app_id
 }
 
 # ================================
