@@ -1,8 +1,6 @@
 terraform {
-  required_version = ">= 1.9"
-
   required_providers {
-    coder  = { source = "coder/coder", version = ">= 2.13" }
+    coder  = { source = "coder/coder" }
     docker = { source = "kreuzwerker/docker" }
   }
 }
@@ -22,9 +20,6 @@ locals {
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 data "coder_provisioner" "me" {}
-
-# --- Task context (for Coder Tasks support) ---
-data "coder_task" "me" {}
 
 # --- External Authentication ---
 # This tells Coder that GitHub auth is available for this template
@@ -247,8 +242,6 @@ SSH_CONFIG_EOF
       echo "[coder] Public key location: ~/.ssh/id_ed25519.pub"
     fi
 
-    # MCP servers are now configured via the claude_code module (see module block above)
-
     # Setup Claude Code directory structure
     # ~/.claude-shared is a volume mount shared across workspaces (credentials + settings only)
     # ~/.claude is per-workspace (chat history, projects, todos, etc.)
@@ -367,52 +360,6 @@ module "code_server" {
     "workbench.settings.enableNaturalLanguageSearch" = false
     "update.mode"                                   = "none"
   }
-}
-
-# --- Claude Code module (Coder Tasks + web terminal) ---
-module "claude_code" {
-  count   = data.coder_workspace.me.start_count
-  source  = "registry.coder.com/coder/claude-code/coder"
-  version = "4.7.5"
-
-  agent_id  = coder_agent.main.id
-  workdir   = local.code_server_folder
-  ai_prompt = data.coder_task.me.prompt
-
-  # Use Claude Code pre-installed in Docker image for faster startup
-  install_claude_code = false
-  claude_binary_path  = "/usr/local/bin"
-
-  # MCP servers (Chrome DevTools, GitHub, Context7)
-  mcp = jsonencode({
-    "chrome-devtools" = {
-      command = "npx"
-      args    = ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
-    }
-    "github" = {
-      command = "npx"
-      args    = ["-y", "@github/github-mcp-server"]
-      env = {
-        GITHUB_PERSONAL_ACCESS_TOKEN = "$GITHUB_TOKEN"
-      }
-    }
-    "context7" = {
-      command = "npx"
-      args    = ["-y", "@upwired/context7"]
-    }
-  })
-
-  # Task reporting and session management
-  report_tasks    = true
-  continue        = true
-  permission_mode = "bypassPermissions"
-  order           = 50
-}
-
-# --- Task resource (enables Coder Tasks tab) ---
-resource "coder_ai_task" "task" {
-  count  = data.coder_workspace.me.start_count
-  app_id = module.claude_code[count.index].task_app_id
 }
 
 # ================================
