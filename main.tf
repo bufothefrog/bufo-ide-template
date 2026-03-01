@@ -242,54 +242,6 @@ SSH_CONFIG_EOF
       echo "[coder] Public key location: ~/.ssh/id_ed25519.pub"
     fi
 
-    # Configure Claude Code MCP servers in ~/.claude.json
-    # The VS Code extension reads MCP config from the CLI's config file, not from globalStorage
-    # Configure headless Chrome for Docker container environment
-    if [ -f ~/.claude.json ]; then
-      # Update existing .claude.json file preserving other settings
-      jq '.mcpServers = {
-        "chrome-devtools": {
-          "command": "npx",
-          "args": ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
-        },
-        "github": {
-          "command": "npx",
-          "args": ["-y", "@github/github-mcp-server"],
-          "env": {
-            "GITHUB_PERSONAL_ACCESS_TOKEN": "'"$GITHUB_TOKEN"'"
-          }
-        },
-        "context7": {
-          "command": "npx",
-          "args": ["-y", "@upwired/context7"]
-        }
-      }' ~/.claude.json > ~/.claude.json.tmp && mv ~/.claude.json.tmp ~/.claude.json
-    else
-      # Create new .claude.json with MCP servers
-      cat > ~/.claude.json << 'CLAUDE_JSON_EOF'
-{
-  "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest", "--headless=true", "--isolated=true", "--chrome-args=--disable-setuid-sandbox --disable-dev-shm-usage"]
-    },
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@github/github-mcp-server"],
-      "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "$GITHUB_TOKEN"
-      }
-    },
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upwired/context7"]
-    }
-  }
-}
-CLAUDE_JSON_EOF
-      chmod 600 ~/.claude.json
-    fi
-
     # Setup Claude Code directory structure
     # ~/.claude-shared is a volume mount shared across workspaces (credentials + settings only)
     # ~/.claude is per-workspace (chat history, projects, todos, etc.)
