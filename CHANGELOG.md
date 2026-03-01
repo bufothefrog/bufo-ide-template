@@ -2,6 +2,44 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.4.0] - 2026-03-01
+
+### Changed
+
+- **Claude Code Native Install** - Switched from npm to native installer
+  - Uses `curl -fsSL https://claude.ai/install.sh | bash` instead of `npm install -g @anthropic-ai/claude-code`
+  - Binary installed to `/usr/local/bin/claude` during Docker build (system-wide, survives volume mounts)
+  - No longer depends on npm for Claude Code itself (Node.js still required for MCP servers via `npx`)
+  - Follows Anthropic's recommended installation method; npm install is now deprecated
+  - Build version bumped to v2.4
+
+### Technical
+
+- Native installer runs with temp `HOME=/tmp/claude-install` during Docker build to avoid conflicts with the volume-mounted `/home/coder`
+- Binary copied from `$HOME/.local/bin/claude` to `/usr/local/bin/claude` for system-wide access
+- Auto-updates are not active in the container (binary is baked into the image; update by pushing a new template version)
+
+## [2.3.0] - 2026-03-01
+
+### Added
+
+- **Coder v2.30.2 Compatibility** - Updated template for latest Coder version
+  - Changed `coder_ai_task` resource from `sidebar_app` block to `app_id` field
+  - Added required `AI Prompt` parameter for task functionality
+  - Compatible with Coder v2.28+ (breaking change from v2.27)
+
+### Changed
+
+- **VS Code Extensions** - Removed Code Canvas extension
+  - Reduced to essential extensions: Markdown All in One and Claude Code
+  - Faster workspace startup and reduced resource usage
+
+### Technical
+
+- Terraform provider updated to v2.13.1
+- Terraform version updated to 1.14.5
+- Template tested and verified on Coder v2.30.2
+
 ## [2.2.0] - 2025-11-02
 
 ### Added

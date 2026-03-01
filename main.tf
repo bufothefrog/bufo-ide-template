@@ -60,6 +60,16 @@ data "coder_parameter" "repo_dest" {
   order        = 2
 }
 
+data "coder_parameter" "ai_prompt" {
+  name         = "AI Prompt"
+  display_name = "AI Task Prompt"
+  description  = "Initial prompt for AI task (optional)"
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 3
+}
+
 variable "cpu" {
   type        = number
   default     = 4
@@ -339,8 +349,7 @@ module "code_server" {
   # Auto-install extensions from Open VSX
   extensions = [
     "yzhang.markdown-all-in-one",
-    "Anthropic.claude-code",
-    "alex-c.code-canvas-app"
+    "Anthropic.claude-code"
   ]
 
   # Auto-detect system theme and disable minimap

@@ -152,9 +152,9 @@ All use `npx -y` for zero-install execution.
 - Package manager: `apt-get` (more reliable than Rocky Linux's DNF)
 - Chrome: Installed via official Google APT repository
 - Node.js: From NodeSource APT repository (v20.x)
-- Claude Code CLI: Installed with 3 retry attempts for reliability
+- Claude Code CLI: Installed via native installer (no npm dependency)
 - User: `coder` with passwordless sudo
-- Build version: `v2.2` (env var used to force rebuilds)
+- Build version: `v2.4` (env var used to force rebuilds)
 
 **Key Dockerfile principle**: Combine RUN commands and clean package manager caches in same layer to reduce image size.
 

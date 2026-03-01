@@ -12,7 +12,6 @@ AI-powered development workspaces with Claude Code, Chrome DevTools MCP, and Git
 - **Privacy-focused defaults** - Microsoft telemetry and experiments disabled
 - **Global permissions** pre-configured for seamless Claude Code operation
 - **Pre-configured MCP servers**: Chrome DevTools, GitHub & Context7
-- **Code Canvas** for visual code exploration
 - **Automatic GitHub authentication** via Coder OAuth (HTTPS)
 - **Auto-generated SSH keys** for secure git operations (persists across rebuilds)
 - **Git auto-fetch** - automatically fetches updates every 60 seconds
